@@ -1,0 +1,9 @@
+maxplayers=8
+world=/config/terraria.wld
+port=7777
+motd=A Minecraft Server
+worldpath=/config
+autocreate=3
+difficulty=0
+worldname=terraria
+secure=1
