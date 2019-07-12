@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"io"
 	"os"
 	"os/exec"
@@ -16,31 +17,46 @@ func check(err error) {
 	}
 }
 
-func save(file *os.File) {
+func startTerraria() *os.File {
+	arguments := append([]string{"-config", "/config/server-config.txt"}, os.Args[1:]...)
+	command := exec.Command("./run.sh", arguments...)
+	stdio, err := pty.Start(command)
+	check(err)
+	return stdio
+}
+
+func pipeStdin(stdio *os.File) {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for scanner.Scan() {
+		_, err := stdio.Write([]byte(scanner.Text() + "\n"))
+		check(err)
+	}
+
+	err := scanner.Err()
+	check(err)
+}
+
+func saveOnExit(stdio *os.File) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
 		select {
 		case <-quit:
-			file.Write([]byte("exit\n"))
-			return
+			_, err := stdio.Write([]byte("exit\n"))
+			check(err)
 		}
 	}
-}
 
-func run() *os.File {
-	command := exec.Command("./run.sh", "-config", "/config/server-config.txt")
-	file, err := pty.Start(command)
-	check(err)
-	return file
 }
 
 func main() {
-	file := run()
-	defer file.Close()
+	stdio := startTerraria()
+	defer stdio.Close()
 
-	go save(file)
+	go pipeStdin(stdio)
+	go saveOnExit(stdio)
 
-	io.Copy(os.Stdout, file)
+	io.Copy(os.Stdout, stdio)
 }
