@@ -51,7 +51,6 @@ func saveOnExit(stdio *os.File) {
 			write(stdio, "exit")
 		}
 	}
-
 }
 
 func main() {
