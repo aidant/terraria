@@ -17,6 +17,11 @@ func check(err error) {
 	}
 }
 
+func write(stdio *os.File, str string) {
+	_, err := stdio.Write([]byte(str + "\n"))
+	check(err)
+}
+
 func startTerraria() *os.File {
 	arguments := append([]string{"-config", "/config/server-config.txt"}, os.Args[1:]...)
 	command := exec.Command("./run.sh", arguments...)
@@ -29,8 +34,7 @@ func pipeStdin(stdio *os.File) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
-		_, err := stdio.Write([]byte(scanner.Text() + "\n"))
-		check(err)
+		write(stdio, scanner.Text())
 	}
 
 	err := scanner.Err()
@@ -44,8 +48,7 @@ func saveOnExit(stdio *os.File) {
 	for {
 		select {
 		case <-quit:
-			_, err := stdio.Write([]byte("exit\n"))
-			check(err)
+			write(stdio, "exit")
 		}
 	}
 
